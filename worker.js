@@ -39,7 +39,20 @@ function validate(a,allowed){
     if(item&&valid.has(item.id)&&!seen.has(item.id)){seen.add(item.id);p.push({id:item.id,why:limit(item.why,340),check:limit(item.check,260)})}
   }
   if(!p.length){ const first=allowed[0];p.push({id:first.id,why:"Titik awal dari laporan terpilih; prioritas masih harus dikonfirmasi editor.",check:"Verifikasi kondisi sawah dan sumber air langsung bersama petani."}); }
-  return {headline:limit(a.headline,230)||"Prioritas pemeriksaan lapangan",reason:limit(a.reason,650),satellite:(limit(a.satellite,750).length>=140&&/Sentinel|citra|satelit/i.test(a.satellite)?limit(a.satellite,750):SATELLITE_PLAN.slice(0,750)),caution:limit(a.caution,800),priorities:p.slice(0,3),tasks:((Array.isArray(a.tasks)?a.tasks:[]).map(t=>limit(t,340)).filter(t=>t.length>=45).length>=3)?a.tasks.slice(0,5).map(t=>limit(t,340)):FIELD_TASKS)}
+  const modelTasks = Array.isArray(a.tasks) ? a.tasks.map(t => limit(t, 340)).filter(t => t.length >= 45) : [];
+  const tasks = modelTasks.length >= 3 ? modelTasks.slice(0, 5) : FIELD_TASKS;
+  const satelliteText = limit(a.satellite, 750);
+  const satellite = satelliteText.length >= 140 && /Sentinel|citra|satelit/i.test(satelliteText)
+    ? satelliteText
+    : SATELLITE_PLAN.slice(0, 750);
+  return {
+    headline: limit(a.headline, 230) || "Prioritas pemeriksaan lapangan",
+    reason: limit(a.reason, 650),
+    satellite,
+    caution: limit(a.caution, 800),
+    priorities: p.slice(0, 3),
+    tasks
+  };
 }
 export default {async fetch(request,env){
   const path=new URL(request.url).pathname;
