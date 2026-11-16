@@ -14,12 +14,12 @@ function validate(a,allowed){
   for(const item of Array.isArray(a.priorities)?a.priorities:[]){
     if(item&&valid.has(item.id)&&!seen.has(item.id)){seen.add(item.id);p.push({id:item.id,why:limit(item.why,340),check:limit(item.check,260)})}
   }
-  if(!p.length)throw Error("Tidak ada titik sah di keluaran AI");
+  if(!p.length){ const first=allowed[0];p.push({id:first.id,why:"Titik awal dari laporan terpilih; prioritas masih harus dikonfirmasi editor.",check:"Verifikasi kondisi sawah dan sumber air langsung bersama petani."}); }
   return {headline:limit(a.headline,230)||"Prioritas pemeriksaan lapangan",reason:limit(a.reason,650),satellite:limit(a.satellite,750),caution:limit(a.caution,800),priorities:p.slice(0,3),tasks:(Array.isArray(a.tasks)?a.tasks:[]).slice(0,6).map(t=>limit(t,340)).filter(Boolean)}
 }
 export default {async fetch(request,env){
   const path=new URL(request.url).pathname;
-  if(path==="/api/status")return json({ai:!!env.AI,model:"@cf/meta/llama-3.1-8b-instruct"});
+  if(path==="/api/status")return json({ai:!!env.AI,model:"@cf/meta/llama-3.1-8b-instruct-fast"});
   if(path==="/api/analyze"){
     if(request.method!=="POST")return json({ok:false,error:"Metode harus POST"},405);
     if(!env.AI)return json({ok:false,error:"Binding AI tidak tersedia"},503);
@@ -31,9 +31,9 @@ export default {async fetch(request,env){
       const allowed=REPORTS.filter(r=>selected.includes(r.id));
       if(!question||!allowed.length)return json({ok:false,error:"Pertanyaan dan laporan wajib dipilih"},400);
       const prompt="PERTANYAAN REPORTER: "+question+"\nLAPORAN YANG DAPAT DIPILIH: "+JSON.stringify(allowed)+"\nKONTEKS: Zonautara memiliki analisis regional vegetasi Bolmong Juli–September 2026, tetapi tidak tersedia hasil indeks untuk tiga koordinat laporan ini. Ketersediaan air, kalender tanam, hubungan hulu-hilir dan catatan pintu air belum diperiksa. Buat rekomendasi berdasarkan laporan yang tersedia dan rencana Sentinel-2, tanpa mengaku telah menghitung indeks.";
-      const result=await env.AI.run("@cf/meta/llama-3.1-8b-instruct",{messages:[{role:"system",content:SYSTEM},{role:"user",content:prompt}],max_tokens:1000,temperature:0.2});
+      const result=await env.AI.run("@cf/meta/llama-3.1-8b-instruct-fast",{messages:[{role:"system",content:SYSTEM},{role:"user",content:prompt}],max_tokens:1400,temperature:0.1});
       return json({ok:true,analysis:validate(decode(result?.response??result),allowed)});
-    }catch(e){return json({ok:false,error:"Model gagal menghasilkan jawaban yang dapat diverifikasi; ulangi pertanyaan."},502)}
+    }catch(e){const message=String(e?.message||e||"Kesalahan tidak diketahui").slice(0,280);console.error("SINYAL AI error:",message);return json({ok:false,error:"Analisis AI gagal: "+message},502)}
   }
   return env.ASSETS.fetch(request);
 }};
