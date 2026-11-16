@@ -1,5 +1,6 @@
 // SINYAL — Zonautara.com | Endpoint AI untuk rekomendasi investigasi.
 // Jangan membuat titik koordinat atau mengklaim perhitungan Sentinel telah dijalankan.
+const BUILD_VERSION = 'sinyal-2026-11-16-v5.2';
 const REPORTS = [
   {id:"PIS-2026-BD9D93",place:"Pinonobatuan, Dumoga",title:"Sawah mengering",date:"2026-08-13",description:"Laporan warga mengenai sawah mengering pada musim kemarau 2026.",lat:0.5803222,lon:124.1052808},
   {id:"PIS-2026-CC38D3",place:"Werdhi Agung Timur, Dumoga",title:"Petani melaporkan gagal panen",date:"2026-08-13",description:"Pelapor menyebut kerugian sekitar Rp15 juta; angka dan penyebab belum dikonfirmasi independen.",lat:0.5470584,lon:124.039329},
@@ -42,7 +43,7 @@ function validate(a,allowed){
 }
 export default {async fetch(request,env){
   const path=new URL(request.url).pathname;
-  if(path==="/api/status")return json({ai:!!env.AI,model:"@cf/meta/llama-3.1-8b-instruct-fast"});
+  if(path==="/api/status")return json({ai:!!env.AI,model:"@cf/meta/llama-3.1-8b-instruct-fast",version:BUILD_VERSION,satellite_engine:"rencana-belum-dijalankan"});
   if(path==="/api/analyze"){
     if(request.method!=="POST")return json({ok:false,error:"Metode harus POST"},405);
     if(!env.AI)return json({ok:false,error:"Binding AI tidak tersedia"},503);
@@ -55,7 +56,7 @@ export default {async fetch(request,env){
       if(!question||!allowed.length)return json({ok:false,error:"Pertanyaan dan laporan wajib dipilih"},400);
       const prompt="PERTANYAAN REPORTER: "+question+"\nLAPORAN YANG DAPAT DIPILIH: "+JSON.stringify(allowed)+"\nKONTEKS: Zonautara memiliki analisis regional vegetasi Bolmong Juli–September 2026, tetapi tidak tersedia hasil indeks untuk tiga koordinat laporan ini. Ketersediaan air, kalender tanam, hubungan hulu-hilir dan catatan pintu air belum diperiksa. Buat rekomendasi berdasarkan laporan yang tersedia dan rencana Sentinel-2, tanpa mengaku telah menghitung indeks.";
       const result=await env.AI.run("@cf/meta/llama-3.1-8b-instruct-fast",{messages:[{role:"system",content:SYSTEM},{role:"user",content:prompt}],max_tokens:1700,temperature:0.2});
-      return json({ok:true,analysis:validate(decode(result?.response??result),allowed)});
+      return json({ok:true,version:BUILD_VERSION,analysis:validate(decode(result?.response??result),allowed)});
     }catch(e){const message=String(e?.message||e||"Kesalahan tidak diketahui").slice(0,280);console.error("SINYAL AI error:",message);return json({ok:false,error:"Analisis AI gagal: "+message},502)}
   }
   return env.ASSETS.fetch(request);
