@@ -22,7 +22,7 @@ Laporan bersumber dari [Pantau Iklim Sulut](https://docs.google.com/spreadsheets
 3. Root directory: `/`, branch produksi: `main`.
 4. Build command: kosong (tidak memerlukan bundling frontend).
 5. Deploy command: `npx wrangler deploy`.
-6. Nama Worker harus `sinyal-zonautara-hackathon` sesuai `wrangler.toml`.
+6. Nama Worker harus `sinyal` sesuai `wrangler.toml`.
 7. Klik Save and Deploy, lalu uji `/api/status` dan satu pertanyaan reporter.
 
 Setelah terhubung, setiap commit ke `main` akan memicu build/deploy otomatis melalui Cloudflare Workers Builds. Sebelum koneksi dibuat, commit GitHub **tidak** otomatis terbit di Cloudflare.
